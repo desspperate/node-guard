@@ -15,8 +15,6 @@ RUN apt update && apt install -y curl && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/.venv /app/.venv
 
 COPY src ./src
-COPY alembic ./alembic
-COPY alembic.ini ./alembic.ini
 
 ENV PATH="/app/.venv/bin:$PATH"
 

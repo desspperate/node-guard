@@ -3,11 +3,7 @@ name = "heartbeatmonitor"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
-    "alembic>=1.18.4",
-    "asyncpg>=0.31.0",
-    "dishka>=1.9.1",
     "fastapi>=0.135.1",
-    "greenlet>=3.3.2",
     "gunicorn>=25.1.0",
     "loguru>=0.7.3",
     "pydantic>=2.12.5",
@@ -15,7 +11,6 @@ dependencies = [
     "pyright>=1.1.408",
     "python-dotenv>=1.2.2",
     "ruff>=0.15.5",
-    "sqlalchemy>=2.0.48",
     "uvicorn>=0.41.0",
 ]
 
@@ -26,7 +21,7 @@ package = true
 line-length = 120
 target-version = "py313"
 fix = false
-exclude = [".venv", "__pycache__", "**/alembic"]
+exclude = [".venv", "__pycache__"]
 
 [tool.ruff.lint]
 select = ["E", "F", "B", "UP", "I", "SIM", "C4", "RUF", "ANN", "N", "S", "T", "Q", "A", "R", "B9", "W", "PL", "ISC",
@@ -51,7 +46,6 @@ pythonVersion = "3.13"
 exclude = [
     ".venv",
     "**/__pycache__",
-    "**/alembic",
 ]
 extraPaths = [
     "src"

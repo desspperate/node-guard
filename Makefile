@@ -34,13 +34,6 @@ ifeq ($(OS), Darwin)
 		echo "✓ Docker already installed: $$(docker --version)"; \
 	fi
 
-	@if ! command -v pwgen > /dev/null 2>&1; then \
-		echo "Installing pwgen..."; \
-		brew install pwgen; \
-	else \
-		echo "✓ pwgen already installed"; \
-	fi
-
 else ifeq ($(OS), Linux)
 	@echo "Updating apt..."
 	sudo apt update
@@ -68,13 +61,6 @@ else ifeq ($(OS), Linux)
 		echo "✓ Docker already installed: $$(docker --version)"; \
 	fi
 
-	@if ! command -v pwgen > /dev/null 2>&1; then \
-		echo "Installing pwgen..."; \
-		sudo apt install -y pwgen; \
-	else \
-		echo "✓ pwgen already installed"; \
-	fi
-
 else
 	@echo "Unsupported OS: $(OS)"
 	@exit 1
@@ -92,16 +78,9 @@ install: .installed
 	@echo "Generating .env..."
 	@echo "ENV=local" > .env
 	@echo "" >> .env
-	@echo "PG_USER=heartbeat_monitor_user" >> .env
-	@echo "PG_PASSWORD=$$(pwgen -s 32 1)" >> .env
-	@echo "PG_NAME=heartbeat_monitor_database" >> .env
-	@echo "PG_DRIVER=postgresql+asyncpg" >> .env
-	@echo "PG_HOST=postgres-dev" >> .env
-	@echo "PG_PORT=5432" >> .env
-	@echo "" >> .env
 	@echo "FASTAPI_TITLE=\"Heartbeat Monitor\"" >> .env
 	@echo "DEBUG=1" >> .env
-	@echo "✓ .env generated with secure password"
+	@echo "✓ .env generated"
 
 dev: install .env
 ifeq ($(OS), Darwin)

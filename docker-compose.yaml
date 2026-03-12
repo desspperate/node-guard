@@ -1,39 +1,4 @@
 services:
-  postgres-dev:
-    profiles: [ "dev" ]
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
-      POSTGRES_DB: ${PG_NAME}
-    ports:
-      - "5433:5432"
-    restart: unless-stopped
-    volumes:
-      - postgres-data-dev:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_NAME}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - heartbeat-monitor-net
-
-  heartbeat-monitor-migration-dev:
-    profiles: [ "dev" ]
-    build:
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    environment:
-      - ENV=docker
-    command: alembic upgrade head
-    depends_on:
-      postgres-dev:
-        condition: service_healthy
-    networks:
-      - heartbeat-monitor-net
-
   heartbeat-monitor-dev:
     profiles: [ "dev" ]
     build:
@@ -48,11 +13,6 @@ services:
     command: uvicorn heartbeat_monitor.main:app --host 0.0.0.0 --port 80 --reload
     volumes:
       - ./src/heartbeat_monitor:/app/src/heartbeat_monitor
-    depends_on:
-      heartbeat-monitor-migration-dev:
-        condition: service_completed_successfully
-      postgres-dev:
-        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
       interval: 10s
@@ -61,10 +21,6 @@ services:
       start_period: 5s
     networks:
       - heartbeat-monitor-net
-
-volumes:
-  postgres-data-dev:
-      driver: local
 
 networks:
   heartbeat-monitor-net:
