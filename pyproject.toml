@@ -1,10 +1,11 @@
 [project]
-name = "heartbeatmonitor"
+name = "node-guard"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.135.1",
     "gunicorn>=25.1.0",
+    "httpx>=0.28.1",
     "loguru>=0.7.3",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
@@ -42,6 +43,7 @@ runtime-evaluated-base-classes = ["pydantic.BaseModel"]
 [tool.pyright]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = "none"
+reportUnnecessaryIsInstance = false
 pythonVersion = "3.13"
 exclude = [
     ".venv",

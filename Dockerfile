@@ -22,5 +22,5 @@ ENV PYTHONPATH="/app/src"
 
 CMD ["gunicorn", \
      "-k", "uvicorn.workers.UvicornWorker", \
-     "heartbeat_monitor.main:app", \
+     "node_guard.main:app", \
      "--bind", "0.0.0.0:80"]

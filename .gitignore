@@ -1,7 +1,8 @@
 .idea
 .venv
 .env
-src/heartbeatmonitor.egg-info
 __pycache__
+src/node_guard.egg-info
 *.py[cod]
 .installed
+storage

@@ -1,18 +1,17 @@
 services:
-  heartbeat-monitor-dev:
+  node-guard-dev-1:
     profiles: [ "dev" ]
     build:
       dockerfile: Dockerfile
     env_file:
       - .env
-    environment:
-      - ENV=docker
     ports:
       - "81:80"
     restart: unless-stopped
-    command: uvicorn heartbeat_monitor.main:app --host 0.0.0.0 --port 80 --reload
+    command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
     volumes:
-      - ./src/heartbeat_monitor:/app/src/heartbeat_monitor
+      - ./src/node_guard:/app/src/node_guard
+      - ./storage:/app/storage
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
       interval: 10s
@@ -20,8 +19,58 @@ services:
       retries: 3
       start_period: 5s
     networks:
-      - heartbeat-monitor-net
+      - node-guard-net
+
+  node-guard-dev-2:
+    profiles: [ "dev" ]
+    build:
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - FASTAPI_TITLE=Node Guard 2
+      - ADVERTISED_ADDRESS=http://host.docker.internal:82
+      - SEED_NODE=http://host.docker.internal:81
+    ports:
+      - "82:80"
+    restart: unless-stopped
+    command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
+    volumes:
+      - ./src/node_guard:/app/src/node_guard
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - node-guard-net
+
+  node-guard-dev-3:
+    profiles: [ "dev" ]
+    build:
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - FASTAPI_TITLE=Node Guard 3
+      - ADVERTISED_ADDRESS=http://host.docker.internal:83
+      - SEED_NODE=http://host.docker.internal:81
+    ports:
+      - "83:80"
+    restart: unless-stopped
+    command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
+    volumes:
+      - ./src/node_guard:/app/src/node_guard
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - node-guard-net
 
 networks:
-  heartbeat-monitor-net:
+  node-guard-net:
     driver: bridge

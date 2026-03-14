@@ -76,10 +76,11 @@ install: .installed
 
 .env:
 	@echo "Generating .env..."
-	@echo "ENV=local" > .env
-	@echo "" >> .env
-	@echo "FASTAPI_TITLE=\"Heartbeat Monitor\"" >> .env
+	@echo "FASTAPI_TITLE=\"Node Guard\"" >> .env
 	@echo "DEBUG=1" >> .env
+	@echo "ADVERTISED_ADDRESS=" >> .env
+	@echo "CLUSTER_TOKEN=" >> .env
+	@echo "SEED_NODE=" >> .env
 	@echo "✓ .env generated"
 
 dev: install .env
