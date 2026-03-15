@@ -11,7 +11,7 @@ services:
     command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
     volumes:
       - ./src/node_guard:/app/src/node_guard
-      - ./storage:/app/storage
+      - ./storage/node-1:/app/storage
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
       interval: 10s
@@ -35,8 +35,12 @@ services:
       - "82:80"
     restart: unless-stopped
     command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
+    depends_on:
+      node-guard-dev-1:
+        condition: service_healthy
     volumes:
       - ./src/node_guard:/app/src/node_guard
+      - ./storage/node-2:/app/storage
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
       interval: 10s
@@ -60,8 +64,157 @@ services:
       - "83:80"
     restart: unless-stopped
     command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
+    depends_on:
+      node-guard-dev-1:
+        condition: service_healthy
     volumes:
       - ./src/node_guard:/app/src/node_guard
+      - ./storage/node-3:/app/storage
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - node-guard-net
+
+  node-guard-dev-4:
+    profiles: [ "dev" ]
+    build:
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - FASTAPI_TITLE=Node Guard 4
+      - ADVERTISED_ADDRESS=http://host.docker.internal:84
+      - SEED_NODE=http://host.docker.internal:81
+    ports:
+      - "84:80"
+    restart: unless-stopped
+    command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
+    depends_on:
+      node-guard-dev-1:
+        condition: service_healthy
+    volumes:
+      - ./src/node_guard:/app/src/node_guard
+      - ./storage/node-4:/app/storage
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - node-guard-net
+
+  node-guard-dev-5:
+    profiles: [ "dev" ]
+    build:
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - FASTAPI_TITLE=Node Guard 5
+      - ADVERTISED_ADDRESS=http://host.docker.internal:85
+      - SEED_NODE=http://host.docker.internal:81
+    ports:
+      - "85:80"
+    restart: unless-stopped
+    command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
+    depends_on:
+      node-guard-dev-1:
+        condition: service_healthy
+    volumes:
+      - ./src/node_guard:/app/src/node_guard
+      - ./storage/node-5:/app/storage
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - node-guard-net
+
+  node-guard-dev-6:
+    profiles: [ "dev" ]
+    build:
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - FASTAPI_TITLE=Node Guard 6
+      - ADVERTISED_ADDRESS=http://host.docker.internal:86
+      - SEED_NODE=http://host.docker.internal:81
+    ports:
+      - "86:80"
+    restart: unless-stopped
+    command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
+    depends_on:
+      node-guard-dev-1:
+        condition: service_healthy
+    volumes:
+      - ./src/node_guard:/app/src/node_guard
+      - ./storage/node-6:/app/storage
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - node-guard-net
+
+  node-guard-dev-7:
+    profiles: [ "dev" ]
+    build:
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - FASTAPI_TITLE=Node Guard 7
+      - ADVERTISED_ADDRESS=http://host.docker.internal:87
+      - SEED_NODE=http://host.docker.internal:81
+    ports:
+      - "87:80"
+    restart: unless-stopped
+    command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
+    depends_on:
+      node-guard-dev-1:
+        condition: service_healthy
+    volumes:
+      - ./src/node_guard:/app/src/node_guard
+      - ./storage/node-7:/app/storage
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - node-guard-net
+
+  node-guard-dev-8:
+    profiles: [ "dev" ]
+    build:
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - FASTAPI_TITLE=Node Guard 8
+      - ADVERTISED_ADDRESS=http://host.docker.internal:88
+      - SEED_NODE=http://host.docker.internal:81
+    ports:
+      - "88:80"
+    restart: unless-stopped
+    command: uvicorn node_guard.main:app --host 0.0.0.0 --port 80 --reload
+    depends_on:
+      node-guard-dev-1:
+        condition: service_healthy
+    volumes:
+      - ./src/node_guard:/app/src/node_guard
+      - ./storage/node-8:/app/storage
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost/ping || exit 1" ]
       interval: 10s

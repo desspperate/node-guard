@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from loguru import logger
 
-from node_guard.config import config
 from node_guard.api import protected_router, router
+from node_guard.config import config
 from node_guard.node_controller import node_controller
 
 

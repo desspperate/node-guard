@@ -1,17 +1,20 @@
 from dataclasses import dataclass
 
+UUID4_HEX_LENGTH = 32
+
 
 @dataclass(frozen=True)
 class Constants:
-    WEBHOOK_URL_MAX_LENGTH = 300
-    GC_GRACE_PERIOD_SECONDS = 3600 * 24 * 7
+    GC_GRACE_PERIOD_SECONDS = 3600 * 24 * 10
+    GC_OP_COUNT_MODULO_TRIGGER = 100
     CHECK_TARGETS_INTERVAL_SECONDS = 10
     GOSSIP_INTERVAL_SECONDS = 2
-    GOSSIP_SEED_RETRY_SECONDS = 60
     STATE_PATH = "storage/state.json"
     ID_PATH = "storage/.node_id"
-    NODE_ID_PREFIX = "hbm-node-"
-    NODE_ID_PREFIX_LENGTH = len(NODE_ID_PREFIX)
+    NODE_ID_PREFIX = "ng-node-"
+    NODE_ID_LENGTH = len(NODE_ID_PREFIX) + UUID4_HEX_LENGTH
+    CLUSTER_ID_PREFIX = "ng-cluster-"
+    CLUSTER_ID_LENGTH = len(CLUSTER_ID_PREFIX) + UUID4_HEX_LENGTH
 
 
 constants = Constants()
