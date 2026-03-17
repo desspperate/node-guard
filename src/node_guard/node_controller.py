@@ -9,6 +9,7 @@ from pydantic import AnyHttpUrl
 
 from node_guard.config import config
 from node_guard.constants import constants
+from node_guard.errors import ClusterMismatchError
 from node_guard.node_client import node_client
 from node_guard.node_id import NodeID
 from node_guard.schemas import ExternalStateSchema, InternalStateSchema, NodeValue, TargetSchema
@@ -39,12 +40,6 @@ class NodeController:
             return
         msg = f"Cluster collision: own={self.state.cluster_id!r}, peer={peer_cluster_id!r}"
         raise ValueError(msg)
-
-    def update_state(self, node_id: str, external_state: ExternalStateSchema) -> None:
-        self._validate_and_adopt_cluster_id(external_state.cluster_id)
-        self.state.merge_state(external_state)
-        self.state.update_last_sync(node_id)
-        self.state.save()
 
     def update_last_sync(self, node_id: str) -> None:
         self.state.update_last_sync(node_id)
@@ -102,14 +97,29 @@ class NodeController:
 
     async def _exchange_with(self, node_id: str, peer_address: str) -> None:
         digest_url = f"{peer_address}/internal/gossip/digest"
-        cluster_id = self.state.cluster_id
         try:
             hashes_match = await node_client.check_state_hash(
                 node_url=digest_url,
                 state_hash=self.get_state_hash(),
                 caller_node_id=self.node_id,
-                cluster_id=cluster_id,
+                cluster_id=self.state.cluster_id,
             )
+        except ClusterMismatchError as e:
+            if len(self.state.last_sync.root) > 0:
+                logger.critical(f"Cluster collision detected with '{node_id}:{peer_address}'. Sync BLOCKED")
+                return
+            self._validate_and_adopt_cluster_id(e.cluster_id)
+            self.state.save()
+            try:
+                hashes_match = await node_client.check_state_hash(
+                    node_url=digest_url,
+                    state_hash=self.get_state_hash(),
+                    caller_node_id=self.node_id,
+                    cluster_id=self.state.cluster_id,
+                )
+            except HTTPStatusError:
+                logger.critical(f"Cluster collision on retry with '{node_id}:{peer_address}'. Sync BLOCKED")
+                return
         except HTTPStatusError:
             logger.critical(f"Cluster collision detected with '{node_id}:{peer_address}'. Sync BLOCKED")
             return
@@ -121,7 +131,7 @@ class NodeController:
                     node_url=exchange_url,
                     state=self.get_external_state(),
                     caller_node_id=self.node_id,
-                    cluster_id=cluster_id,
+                    cluster_id=self.state.cluster_id,
                 )
             except HTTPStatusError:
                 logger.critical(f"Cluster collision detected with '{node_id}:{peer_address}'. Merge BLOCKED")

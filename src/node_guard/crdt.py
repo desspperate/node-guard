@@ -8,20 +8,24 @@ from node_guard.schemas import CRDTSetSchema
 
 
 class CRDTSet:
-    def __init__(self, added: set[str] | None = None, removed: set[str] | None = None) -> None:
-        validated = CRDTSetSchema(added=added or set(), removed=removed or set())
+    def __init__(self, added: set[str] | None = None, removed: dict[str, float] | None = None) -> None:
+        validated = CRDTSetSchema(added=added or set(), removed=removed or {})
         self.added = validated.added
         self.removed = validated.removed
         self.op_counter = 0
 
     def merge(self, other: CRDTSet) -> None:
         self.added |= other.added
-        self.removed |= other.removed
+        for token, ts in other.removed.items():
+            if token in self.removed:
+                self.removed[token] = min(self.removed[token], ts)
+            else:
+                self.removed[token] = ts
         self.op_counter += 1
         self.try_collect_garbage()
 
     def get_active(self) -> set[str]:
-        active_tokens = self.added - self.removed
+        active_tokens = self.added - self.removed.keys()
         return {self._get_base_value(t) for t in active_tokens}
 
     def add(self, new_token: str) -> None:
@@ -39,8 +43,9 @@ class CRDTSet:
             msg = f"Value '{base_value}' is not valid: must be non-empty and must not contain '|'"
             raise ValueError(msg)
         tokens_in_added = [t for t in self.added if self._get_base_value(t) == base_value]
+        now = datetime.now(tz=UTC).timestamp()
         for t in tokens_in_added:
-            self.removed.add(t)
+            self.removed[t] = now
         self.op_counter += 1
         self.try_collect_garbage()
 
@@ -65,24 +70,29 @@ class CRDTSet:
             else:
                 seen[base_value] = t
 
-            if t in self.removed:
+            if t in self.removed and self._is_timestamp_outdated(self.removed[t]):
                 to_remove_from_removed.add(t)
                 to_remove_from_added.add(t)
 
         self.added -= to_remove_from_added
-        self.removed -= to_remove_from_removed
+        for t in to_remove_from_removed:
+            del self.removed[t]
 
-    def to_dict(self) -> dict[str, list[str]]:
+    def to_dict(self) -> dict:
         return {
             "added": sorted(self.added),
-            "removed": sorted(self.removed),
+            "removed": dict(sorted(self.removed.items())),
         }
 
-    def _is_token_outdated(self, token: str) -> bool:
+    @staticmethod
+    def _is_timestamp_outdated(ts: float) -> bool:
         return (
-            datetime.now(tz=UTC) - datetime.fromtimestamp(self._get_timestamp(token), tz=UTC)
+            datetime.now(tz=UTC) - datetime.fromtimestamp(ts, tz=UTC)
             > timedelta(seconds=constants.GC_GRACE_PERIOD_SECONDS)
         )
+
+    def _is_token_outdated(self, token: str) -> bool:
+        return self._is_timestamp_outdated(self._get_timestamp(token))
 
     def try_collect_garbage(self) -> None:
         if self.op_counter % constants.GC_OP_COUNT_MODULO_TRIGGER == 0:

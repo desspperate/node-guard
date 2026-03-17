@@ -3,6 +3,7 @@ from http import HTTPStatus
 from httpx import AsyncClient, HTTPError
 
 from node_guard.config import config
+from node_guard.errors import ClusterMismatchError
 from node_guard.schemas import ExternalStateSchema, StateHashSchema
 
 
@@ -28,6 +29,9 @@ class NodeClient:
             headers={**self._auth_headers, "X-Node-ID": caller_node_id, "X-Cluster-ID": cluster_id},
         )
         if response.status_code == HTTPStatus.FORBIDDEN:
+            detail = response.json().get("detail", {})
+            if isinstance(detail, dict) and "cluster_id" in detail:
+                raise ClusterMismatchError(cluster_id=detail["cluster_id"])
             response.raise_for_status()
         return response.status_code == HTTPStatus.OK
 

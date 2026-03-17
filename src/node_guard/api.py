@@ -43,9 +43,12 @@ def gossip_digest(state_hash: StateHashSchema, x_node_id: str = Header(), x_clus
     logger.debug(f"Gossip digest with '{x_node_id}'")
     try:
         node_controller.validate_cluster_id(x_cluster_id)
-    except ValueError as e:
-        logger.critical(f"Cluster collision detected from '{x_node_id}'. BLOCKED")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
+    except ValueError:
+        logger.critical(f"Cluster mismatch from '{x_node_id}', sending own cluster_id")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"cluster_id": node_controller.state.cluster_id},
+        )
     if node_controller.get_state_hash() != state_hash.hash:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT)
     node_controller.update_last_sync(node_id=x_node_id)
@@ -55,8 +58,10 @@ def gossip_digest(state_hash: StateHashSchema, x_node_id: str = Header(), x_clus
 def gossip_exchange(state: ExternalStateSchema, x_node_id: str = Header()) -> ExternalStateSchema:
     logger.debug(f"Gossip exchange with '{x_node_id}'")
     try:
-        node_controller.update_state(node_id=x_node_id, external_state=state)
+        node_controller.validate_cluster_id(state.cluster_id)
     except ValueError as e:
         logger.critical(f"Cluster collision detected from '{x_node_id}'. Merge BLOCKED")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
+    node_controller.state.merge_state(state)
+    node_controller.update_last_sync(x_node_id)
     return node_controller.get_external_state()

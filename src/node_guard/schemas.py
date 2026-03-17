@@ -16,11 +16,20 @@ class NodeValue(BaseModel):
 
 class CRDTSetSchema(BaseModel):
     added: set[str] = Field(default_factory=set)
-    removed: set[str] = Field(default_factory=set)
+    removed: dict[str, float] = Field(default_factory=dict)
 
-    @field_validator("added", "removed")
+    @field_validator("added")
     @classmethod
-    def validate_token_format(cls, tokens: set[str]) -> set[str]:
+    def validate_added_token_format(cls, tokens: set[str]) -> set[str]:
+        for token in tokens:
+            if not _TOKEN_PATTERN.match(token):
+                msg = f"Invalid token format: '{token}'. Expected 'base_value|uuid4_hex|timestamp'."
+                raise ValueError(msg)
+        return tokens
+
+    @field_validator("removed")
+    @classmethod
+    def validate_removed_token_format(cls, tokens: dict[str, float]) -> dict[str, float]:
         for token in tokens:
             if not _TOKEN_PATTERN.match(token):
                 msg = f"Invalid token format: '{token}'. Expected 'base_value|uuid4_hex|timestamp'."
@@ -29,9 +38,21 @@ class CRDTSetSchema(BaseModel):
 
 
 class NodesCRDTSetSchema(CRDTSetSchema):
-    @field_validator("added", "removed")
+    @field_validator("added")
     @classmethod
-    def validate_node_base_value(cls, tokens: set[str]) -> set[str]:
+    def validate_node_base_value_added(cls, tokens: set[str]) -> set[str]:
+        for token in tokens:
+            base_value = token.split("|", maxsplit=1)[0]
+            try:
+                NodeValue.model_validate(json.loads(base_value))
+            except Exception as e:
+                msg = f"Invalid node base value: '{base_value}'. Expected JSON with 'node_id' and 'address'."
+                raise ValueError(msg) from e
+        return tokens
+
+    @field_validator("removed")
+    @classmethod
+    def validate_node_base_value_removed(cls, tokens: dict[str, float]) -> dict[str, float]:
         for token in tokens:
             base_value = token.split("|", maxsplit=1)[0]
             try:

@@ -39,9 +39,9 @@ class State:
         self.cluster_id: str = cluster_id or (constants.CLUSTER_ID_PREFIX + uuid4().hex)
 
     def merge_state(self, external_state: ExternalStateSchema) -> None:
-        peer_nodes = CRDTSet(set(external_state.nodes.added), set(external_state.nodes.removed))
-        peer_targets = CRDTSet(set(external_state.targets.added), set(external_state.targets.removed))
-        peer_webhooks = CRDTSet(set(external_state.webhooks.added), set(external_state.webhooks.removed))
+        peer_nodes = CRDTSet(set(external_state.nodes.added), external_state.nodes.removed)
+        peer_targets = CRDTSet(set(external_state.targets.added), external_state.targets.removed)
+        peer_webhooks = CRDTSet(set(external_state.webhooks.added), external_state.webhooks.removed)
 
         self.nodes.merge(peer_nodes)
         self.targets.merge(peer_targets)
@@ -87,7 +87,7 @@ class State:
             cluster_id=self.cluster_id,
         )
 
-    def network_format(self) -> dict[str, dict[str, list[str]]]:
+    def network_format(self) -> dict[str, dict]:
         return {
             "nodes": self.nodes.to_dict(),
             "targets": self.targets.to_dict(),
@@ -119,9 +119,9 @@ class State:
             validated = InternalStateSchema.model_validate_json(path.read_text())
             return cls(
                 last_sync=validated.last_sync,
-                nodes=CRDTSet(set(validated.nodes.added), set(validated.nodes.removed)),
-                targets=CRDTSet(set(validated.targets.added), set(validated.targets.removed)),
-                webhooks=CRDTSet(set(validated.webhooks.added), set(validated.webhooks.removed)),
+                nodes=CRDTSet(set(validated.nodes.added), validated.nodes.removed),
+                targets=CRDTSet(set(validated.targets.added), validated.targets.removed),
+                webhooks=CRDTSet(set(validated.webhooks.added), validated.webhooks.removed),
                 cluster_id=validated.cluster_id,
             )
 
