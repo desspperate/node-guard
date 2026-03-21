@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from loguru import logger
-from pydantic import AnyHttpUrl
 
 from node_guard.config import config
 from node_guard.node_controller import node_controller
-from node_guard.schemas import ExternalStateSchema, InternalStateSchema, StateHashSchema, TargetSchema
+from node_guard.schemas import ExternalStateSchema, InternalStateSchema, StateHashSchema, TargetSchema, TargetsSchema
 
 
 def verify_token(x_cluster_token: str = Header()) -> None:
@@ -26,16 +25,21 @@ def get_state() -> InternalStateSchema:
     return node_controller.get_internal_state()
 
 
-@protected_router.post("/api/target", response_model=InternalStateSchema)
-def create_target(target: TargetSchema) -> InternalStateSchema:
+@protected_router.get("/api/targets", response_model=TargetsSchema)
+def get_targets() -> TargetsSchema:
+    return node_controller.get_targets()
+
+
+@protected_router.post("/api/targets", response_model=TargetsSchema)
+def create_target(target: TargetSchema) -> TargetsSchema:
     node_controller.add_target(target=target)
-    return node_controller.get_internal_state()
+    return node_controller.get_targets()
 
 
-@protected_router.delete("/api/state/{target_address}", response_model=InternalStateSchema)
-def delete_target(target_address: AnyHttpUrl) -> InternalStateSchema:
+@protected_router.delete("/api/targets", response_model=TargetsSchema)
+def delete_target(target_address: str) -> TargetsSchema:
     node_controller.remove_target(target_address=target_address)
-    return node_controller.get_internal_state()
+    return node_controller.get_targets()
 
 
 @protected_router.post("/internal/gossip/digest", status_code=status.HTTP_200_OK)
@@ -43,12 +47,12 @@ def gossip_digest(state_hash: StateHashSchema, x_node_id: str = Header(), x_clus
     logger.debug(f"Gossip digest with '{x_node_id}'")
     try:
         node_controller.validate_cluster_id(x_cluster_id)
-    except ValueError:
+    except ValueError as e:
         logger.critical(f"Cluster mismatch from '{x_node_id}', sending own cluster_id")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"cluster_id": node_controller.state.cluster_id},
-        )
+        ) from e
     if node_controller.get_state_hash() != state_hash.hash:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT)
     node_controller.update_last_sync(node_id=x_node_id)

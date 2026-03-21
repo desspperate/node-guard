@@ -8,6 +8,9 @@ class Config(BaseSettings):
     ADVERTISED_ADDRESS: str
     CLUSTER_TOKEN: SecretStr
     SEED_NODE: str
+    LOG_LEVEL: str
+    TELEGRAM_BOT_TOKEN: SecretStr
+    TELEGRAM_CHAT_ID: int
 
 
 config = Config()  # type: ignore[call-args]

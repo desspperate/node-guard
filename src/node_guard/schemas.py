@@ -2,16 +2,23 @@ import json
 import re
 from datetime import UTC, datetime
 
-from pydantic import AnyHttpUrl, BaseModel, Field, RootModel, field_validator, model_serializer, model_validator
+from pydantic import BaseModel, Field, RootModel, field_validator, model_serializer, model_validator
 
 from node_guard.constants import constants
+from node_guard.enums import TargetStatus
 
 _TOKEN_PATTERN = re.compile(r"^[^|]+\|[0-9a-f]{32}\|\d+(\.\d+)?$")
 
 
 class NodeValue(BaseModel):
     node_id: str
-    address: AnyHttpUrl
+    address: str
+
+
+class TargetStatusVoteValue(BaseModel):
+    target: str
+    node_id: str
+    status: TargetStatus
 
 
 class CRDTSetSchema(BaseModel):
@@ -63,6 +70,63 @@ class NodesCRDTSetSchema(CRDTSetSchema):
         return tokens
 
 
+class SentAlertValue(BaseModel):
+    target: str
+    status: TargetStatus
+
+
+class SentAlertsCRDTSetSchema(CRDTSetSchema):
+    @field_validator("added")
+    @classmethod
+    def validate_added(cls, tokens: set[str]) -> set[str]:
+        for token in tokens:
+            base_value = token.split("|", maxsplit=1)[0]
+            try:
+                SentAlertValue.model_validate(json.loads(base_value))
+            except Exception as e:
+                msg = f"Invalid sent_alerts base value: '{base_value}'."
+                raise ValueError(msg) from e
+        return tokens
+
+    @field_validator("removed")
+    @classmethod
+    def validate_removed(cls, tokens: dict[str, float]) -> dict[str, float]:
+        for token in tokens:
+            base_value = token.split("|", maxsplit=1)[0]
+            try:
+                SentAlertValue.model_validate(json.loads(base_value))
+            except Exception as e:
+                msg = f"Invalid sent_alerts base value: '{base_value}'."
+                raise ValueError(msg) from e
+        return tokens
+
+
+class TargetStatusVoteCRDTSetSchema(CRDTSetSchema):
+    @field_validator("added")
+    @classmethod
+    def validate_added(cls, tokens: set[str]) -> set[str]:
+        for token in tokens:
+            base_value = token.split("|", maxsplit=1)[0]
+            try:
+                TargetStatusVoteValue.model_validate(json.loads(base_value))
+            except Exception as e:
+                msg = f"Invalid target_status_vote base value: '{base_value}'."
+                raise ValueError(msg) from e
+        return tokens
+
+    @field_validator("removed")
+    @classmethod
+    def validate_removed(cls, tokens: dict[str, float]) -> dict[str, float]:
+        for token in tokens:
+            base_value = token.split("|", maxsplit=1)[0]
+            try:
+                TargetStatusVoteValue.model_validate(json.loads(base_value))
+            except Exception as e:
+                msg = f"Invalid target_status_vote base value: '{base_value}'."
+                raise ValueError(msg) from e
+        return tokens
+
+
 class LastSyncSchema(RootModel[dict[str, datetime]]):
     root: dict[str, datetime] = Field(default_factory=dict)
 
@@ -101,7 +165,8 @@ class StateHashSchema(BaseModel):
 class ExternalStateSchema(BaseModel):
     nodes: NodesCRDTSetSchema
     targets: CRDTSetSchema
-    webhooks: CRDTSetSchema
+    sent_alerts: SentAlertsCRDTSetSchema
+    target_status_vote: TargetStatusVoteCRDTSetSchema
     cluster_id: str
 
     @field_validator("cluster_id")
@@ -118,4 +183,13 @@ class InternalStateSchema(ExternalStateSchema):
 
 
 class TargetSchema(BaseModel):
-    target_address: AnyHttpUrl
+    target_address: str
+
+    @field_validator("target_address")
+    @classmethod
+    def normalize(cls, v: str) -> str:
+        return v.rstrip("/")
+
+
+class TargetsSchema(BaseModel):
+    targets: list[str]
